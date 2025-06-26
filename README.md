@@ -5,11 +5,13 @@ A TypeScript-based LLM server application using ES2022 modules.
 ## Setup
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
 
 2. Build the project:
+
    ```bash
    npm run build
    ```
@@ -22,6 +24,7 @@ A TypeScript-based LLM server application using ES2022 modules.
 ## Development
 
 For development with auto-compilation:
+
 ```bash
 npm run dev
 ```
