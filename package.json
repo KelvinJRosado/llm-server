@@ -1,0 +1,19 @@
+{
+  "name": "llm-server",
+  "version": "1.0.0",
+  "description": "LLM Server application",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "20.19.1",
+    "typescript": "5.8.3"
+  }
+}
