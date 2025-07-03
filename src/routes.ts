@@ -69,6 +69,7 @@ export function registerRoutes(app: Express): void {
     const { chatId } = req.params;
     const history = chatStore[chatId];
     if (!history) {
+      console.error(`Chat not found for ID: ${chatId}`);
       res.status(404).json({ error: 'Chat not found' });
       return;
     }
@@ -87,10 +88,12 @@ export function registerRoutes(app: Express): void {
     const { chatId } = req.params;
     const { message } = req.body;
     if (typeof message !== 'string' || !message.trim()) {
+      console.error(`Invalid message for chat ID: ${chatId}`, message);
       res.status(400).json({ error: 'Message is required' });
       return;
     }
     if (!chatStore[chatId]) {
+      console.error(`Chat not found for ID: ${chatId}`);
       res.status(404).json({ error: 'Chat not found' });
       return;
     }
