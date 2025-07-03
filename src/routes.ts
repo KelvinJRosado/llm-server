@@ -5,7 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
  * In-memory mock store for chat histories.
  * Key: chatId (string), Value: array of message objects
  */
-const chatStore: Record<string, { timestamp: string; message: string }[]> = {};
+const chatStore: Record<
+  string,
+  { timestamp: string; content: string; id: string; isUser: boolean }[]
+> = {};
 
 /**
  * Registers all API routes on the provided Express application instance.
@@ -36,7 +39,7 @@ export function registerRoutes(app: Express): void {
    * @returns {object} Simple greeting message
    */
   app.get('/hello', (req: Request, res: Response): void => {
-    console.log('Received request for hello', JSON.stringify(req.headers));
+    console.log('Received request for hello');
 
     res.status(200).json({
       message: 'Hello from LLM Server!',
@@ -60,6 +63,51 @@ export function registerRoutes(app: Express): void {
   });
 
   /**
+   * Add a message to a chat
+   * @route POST /chats/:chatId
+   * @param chatId Chat ID
+   * @body { message: string }
+   * @returns {object} Updated chat history
+   */
+  app.post('/chats/:chatId', (req: Request, res: Response): void => {
+    const { chatId } = req.params;
+    const { content } = req.body;
+    if (typeof content !== 'string' || !content.trim()) {
+      console.error(`Invalid content for chat ID: ${chatId}`, content);
+      res.status(400).json({ error: 'Content is required' });
+      return;
+    }
+    if (!chatStore[chatId]) {
+      console.error(`Chat not found for ID: ${chatId}`);
+      res.status(404).json({ error: 'Chat not found' });
+      return;
+    }
+    const requestEntry = {
+      timestamp: new Date().toISOString(),
+      content,
+      id: uuidv4(),
+      isUser: true,
+    };
+    chatStore[chatId].push(requestEntry);
+
+    console.log(`Added request message to chat ID: ${chatId}`, requestEntry);
+
+    // TODO: Additional processing here to get a response
+
+    const responseEntry = {
+      timestamp: new Date().toISOString(),
+      content: 'This is a mock response', // Replace with actual response logic
+      id: uuidv4(),
+      isUser: false,
+    };
+    chatStore[chatId].push(responseEntry);
+
+    console.log(`Added response message to chat ID: ${chatId}`, responseEntry);
+
+    res.status(201).json(responseEntry);
+  });
+
+  /**
    * Get chat history by chat ID
    * @route GET /chats/:chatId
    * @param chatId Chat ID
@@ -75,33 +123,5 @@ export function registerRoutes(app: Express): void {
     }
     console.log(`Retrieved history for chat ID: ${chatId}`, history);
     res.json({ chatId, history });
-  });
-
-  /**
-   * Add a message to a chat
-   * @route POST /chats/:chatId
-   * @param chatId Chat ID
-   * @body { message: string }
-   * @returns {object} Updated chat history
-   */
-  app.post('/chats/:chatId', (req: Request, res: Response): void => {
-    const { chatId } = req.params;
-    const { message } = req.body;
-    if (typeof message !== 'string' || !message.trim()) {
-      console.error(`Invalid message for chat ID: ${chatId}`, message);
-      res.status(400).json({ error: 'Message is required' });
-      return;
-    }
-    if (!chatStore[chatId]) {
-      console.error(`Chat not found for ID: ${chatId}`);
-      res.status(404).json({ error: 'Chat not found' });
-      return;
-    }
-    const entry = { timestamp: new Date().toISOString(), message };
-    chatStore[chatId].push(entry);
-
-    console.log(`Added message to chat ID: ${chatId}`, entry);
-
-    res.status(201).json({ chatId, history: chatStore[chatId] });
   });
 }
