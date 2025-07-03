@@ -1,4 +1,5 @@
 import express from 'express';
+import { registerRoutes } from './routes.js';
 
 /**
  * Express application instance
@@ -16,41 +17,9 @@ const PORT = 5000;
 app.use(express.json());
 
 /**
- * Basic health check endpoint
- * @route GET /hello
- * @returns {object} Simple greeting message
+ * Register API routes
  */
-app.get('/hello', (req, res) => {
-  console.log('Received request for hello', JSON.stringify(req.headers));
-
-  res.json({
-    message: 'Hello from LLM Server!',
-    timestamp: new Date().toISOString(),
-    status: 'success',
-  });
-});
-
-/**
- * Root endpoint
- * @route GET /
- * @returns {object} API information
- */
-app.get('/', (req, res) => {
-  console.log(
-    'Received request for API information',
-    JSON.stringify(req.headers)
-  );
-
-  res.json({
-    name: 'LLM Server API',
-    version: '1.0.0',
-    description: 'A simple Express API server with TypeScript',
-    endpoints: {
-      '/': 'API information',
-      '/hello': 'Simple greeting endpoint',
-    },
-  });
-});
+registerRoutes(app);
 
 /**
  * Start the Express server
