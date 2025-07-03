@@ -96,11 +96,8 @@ export function registerRoutes(app: Express): void {
       id: uuidv4(),
       isUser: true,
     };
-    chatStore[chatId].push(requestEntry);
 
-    console.log(`Added request message to chat ID: ${chatId}`, requestEntry);
-
-    // TODO: Additional processing here to get a response
+    // TODO: Additional processing here to get a real response
 
     const responseEntry = {
       timestamp: new Date().toLocaleTimeString('en-US', {
@@ -112,11 +109,17 @@ export function registerRoutes(app: Express): void {
       id: uuidv4(),
       isUser: false,
     };
+
+    chatStore[chatId].push(requestEntry);
     chatStore[chatId].push(responseEntry);
 
-    console.log(`Added response message to chat ID: ${chatId}`, responseEntry);
+    const interaction = {
+      request: requestEntry,
+      response: responseEntry,
+    };
+    console.log(`Interaction recorded for chat ID: ${chatId}`, interaction);
 
-    res.status(201).json(responseEntry);
+    res.status(201).json(interaction);
   });
 
   /**
