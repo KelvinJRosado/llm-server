@@ -1,6 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getOllamaResponse } from './ollama';
+import { getOllamaResponse, type LLMConfig } from './ollama';
 
 /**
  * In-memory mock store for chat histories.
@@ -71,14 +71,17 @@ export function registerRoutes(app: Express): void {
    * Add a message to a chat
    * @route POST /chats/:chatId
    * @param chatId Chat ID
-   * @body { message: string }
+   * @body { content: string, config?: LLMConfig }
    * @returns {object} Updated chat history
    */
   app.post(
     '/chats/:chatId',
     async (req: Request, res: Response): Promise<void> => {
       const { chatId } = req.params;
-      const { content } = req.body;
+      const { content, config } = req.body;
+
+      console.log(`Incoming request for chat ${chatId}`, { content, config });
+
       if (typeof content !== 'string' || !content.trim()) {
         console.error(`Invalid content for chat ID: ${chatId}`, content);
         res.status(400).json({ error: 'Content is required' });
@@ -100,10 +103,40 @@ export function registerRoutes(app: Express): void {
         role: 'user',
       };
 
-      // Get response from LLM
+      // Sanitize config: ensure all numeric options are correct type
+      const numericFloatKeys = ['temperature'];
+      let safeConfig = config;
+      if (config && typeof config === 'object') {
+        safeConfig = { ...config };
+        for (const key of numericFloatKeys) {
+          if (key in safeConfig) {
+            const val = parseFloat(safeConfig[key]);
+            if (isNaN(val)) {
+              delete safeConfig[key];
+            } else {
+              safeConfig[key] = val;
+            }
+          }
+        }
+      }
+
+      // Validate and sanitize model input: only allow 'llama3.2'
+      const allowedModels = ['llama3.2'];
+      if (
+        safeConfig &&
+        typeof safeConfig === 'object' &&
+        'model' in safeConfig
+      ) {
+        if (safeConfig.model !== 'llama3.2') {
+          delete safeConfig.model;
+        }
+      }
+
+      // Get response from LLM with configuration
       const responseContent = await getOllamaResponse(
         content,
-        chatStore[chatId]
+        chatStore[chatId],
+        safeConfig as LLMConfig
       );
 
       const responseEntry = {

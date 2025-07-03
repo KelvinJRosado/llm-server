@@ -2,14 +2,35 @@ import { Ollama } from 'ollama';
 
 const ollama = new Ollama({ host: 'http://127.0.0.1:11434' });
 
+/**
+ * Configuration interface for LLM requests
+ */
+export interface LLMConfig {
+  model?: string;
+  temperature?: number;
+}
+
+/**
+ * Get response from Ollama with configuration options
+ * @param chatMessage - The user's message
+ * @param chatHistory - Previous chat history
+ * @param config - Configuration options for the LLM
+ * @returns Promise<string> - The LLM response
+ */
 export const getOllamaResponse = async (
   chatMessage: string,
-  chatHistory: { role: string; content: string }[]
-) => {
+  chatHistory: { role: string; content: string }[],
+  config: LLMConfig = {}
+): Promise<string> => {
   try {
+    const { model = 'llama3.2', temperature = 0.7 } = config;
+
     const response = await ollama.chat({
-      model: 'llama3.2',
+      model,
       messages: [...chatHistory, { role: 'user', content: chatMessage }],
+      options: {
+        temperature,
+      },
     });
     return response.message.content;
   } catch (error) {
