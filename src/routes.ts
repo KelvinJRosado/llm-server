@@ -117,7 +117,6 @@ export function registerRoutes(app: Express): void {
     // Exclude id from response to client
     const stripId = ({ id, ...rest }: any) => rest;
     const interaction = {
-      request: stripId(requestEntry),
       response: stripId(responseEntry),
     };
     console.log(`Interaction recorded for chat ID: ${chatId}`, interaction);
