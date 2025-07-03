@@ -43,7 +43,11 @@ export function registerRoutes(app: Express): void {
 
     res.status(200).json({
       message: 'Hello from LLM Server!',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }),
       status: 'success',
     });
   });
@@ -83,7 +87,11 @@ export function registerRoutes(app: Express): void {
       return;
     }
     const requestEntry = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }),
       content,
       id: uuidv4(),
       isUser: true,
@@ -95,7 +103,11 @@ export function registerRoutes(app: Express): void {
     // TODO: Additional processing here to get a response
 
     const responseEntry = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }),
       content: 'This is a mock response', // Replace with actual response logic
       id: uuidv4(),
       isUser: false,
