@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 const chatStore: Record<
   string,
-  { timestamp: string; content: string; id: string; isUser: boolean }[]
+  { timestamp: string; content: string; isUser: boolean }[]
 > = {};
 
 /**
@@ -110,12 +110,15 @@ export function registerRoutes(app: Express): void {
       isUser: false,
     };
 
+    // TODO: Update this to use a DB
     chatStore[chatId].push(requestEntry);
     chatStore[chatId].push(responseEntry);
 
+    // Exclude id from response to client
+    const stripId = ({ id, ...rest }: any) => rest;
     const interaction = {
-      request: requestEntry,
-      response: responseEntry,
+      request: stripId(requestEntry),
+      response: stripId(responseEntry),
     };
     console.log(`Interaction recorded for chat ID: ${chatId}`, interaction);
 
@@ -136,7 +139,10 @@ export function registerRoutes(app: Express): void {
       res.status(404).json({ error: 'Chat not found' });
       return;
     }
-    console.log(`Retrieved history for chat ID: ${chatId}`, history);
-    res.json({ chatId, history });
+    // Exclude id from all messages in history
+    const stripId = ({ id, ...rest }: any) => rest;
+    const safeHistory = history.map(stripId);
+    console.log(`Retrieved history for chat ID: ${chatId}`, safeHistory);
+    res.json({ chatId, history: safeHistory });
   });
 }
