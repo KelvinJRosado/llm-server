@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { getOllamaResponse } from './ollama';
 
 /**
  * In-memory mock store for chat histories.
@@ -7,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 const chatStore: Record<
   string,
-  { timestamp: string; content: string; isUser: boolean }[]
+  { timestamp: string; content: string; role: string }[]
 > = {};
 
 /**
@@ -73,56 +74,63 @@ export function registerRoutes(app: Express): void {
    * @body { message: string }
    * @returns {object} Updated chat history
    */
-  app.post('/chats/:chatId', (req: Request, res: Response): void => {
-    const { chatId } = req.params;
-    const { content } = req.body;
-    if (typeof content !== 'string' || !content.trim()) {
-      console.error(`Invalid content for chat ID: ${chatId}`, content);
-      res.status(400).json({ error: 'Content is required' });
-      return;
+  app.post(
+    '/chats/:chatId',
+    async (req: Request, res: Response): Promise<void> => {
+      const { chatId } = req.params;
+      const { content } = req.body;
+      if (typeof content !== 'string' || !content.trim()) {
+        console.error(`Invalid content for chat ID: ${chatId}`, content);
+        res.status(400).json({ error: 'Content is required' });
+        return;
+      }
+      if (!chatStore[chatId]) {
+        console.error(`Chat not found for ID: ${chatId}`);
+        res.status(404).json({ error: 'Chat not found' });
+        return;
+      }
+      const requestEntry = {
+        timestamp: new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        }),
+        content,
+        id: uuidv4(),
+        role: 'user',
+      };
+
+      // Get response from LLM
+      const responseContent = await getOllamaResponse(
+        content,
+        chatStore[chatId]
+      );
+
+      const responseEntry = {
+        timestamp: new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        }),
+        content: responseContent,
+        id: uuidv4(),
+        role: 'assistant',
+      };
+
+      // TODO: Update this to use a DB
+      chatStore[chatId].push(requestEntry);
+      chatStore[chatId].push(responseEntry);
+
+      // Exclude id from response to client
+      const stripId = ({ id, ...rest }: any) => rest;
+      const interaction = {
+        response: stripId(responseEntry),
+      };
+      console.log(`Interaction recorded for chat ID: ${chatId}`, interaction);
+
+      res.status(201).json(interaction);
     }
-    if (!chatStore[chatId]) {
-      console.error(`Chat not found for ID: ${chatId}`);
-      res.status(404).json({ error: 'Chat not found' });
-      return;
-    }
-    const requestEntry = {
-      timestamp: new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }),
-      content,
-      id: uuidv4(),
-      isUser: true,
-    };
-
-    // TODO: Additional processing here to get a real response
-
-    const responseEntry = {
-      timestamp: new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }),
-      content: 'This is a mock response', // Replace with actual response logic
-      id: uuidv4(),
-      isUser: false,
-    };
-
-    // TODO: Update this to use a DB
-    chatStore[chatId].push(requestEntry);
-    chatStore[chatId].push(responseEntry);
-
-    // Exclude id from response to client
-    const stripId = ({ id, ...rest }: any) => rest;
-    const interaction = {
-      response: stripId(responseEntry),
-    };
-    console.log(`Interaction recorded for chat ID: ${chatId}`, interaction);
-
-    res.status(201).json(interaction);
-  });
+  );
 
   /**
    * Get chat history by chat ID
