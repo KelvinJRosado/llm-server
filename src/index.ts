@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { registerRoutes } from './routes.js';
 
 /**
@@ -10,6 +11,12 @@ const app = express();
  * Server port configuration
  */
 const PORT = 5000;
+
+/**
+ * Middleware to enable CORS for all origins and methods
+ * Adjust the options below for production security as needed
+ */
+app.use(cors());
 
 /**
  * Middleware to parse JSON requests
