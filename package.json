@@ -21,6 +21,6 @@
   },
   "dependencies": {
     "express": "5.1.0",
-    "ollama": "0.5.16"
+    "uuid": "11.1.0"
   }
 }

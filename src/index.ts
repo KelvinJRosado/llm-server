@@ -26,9 +26,6 @@ registerRoutes(app);
  */
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`📝 Available endpoints:`);
-  console.log(`   GET / - API information`);
-  console.log(`   GET /hello - Simple greeting`);
 });
 
 /**
