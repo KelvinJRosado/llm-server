@@ -1,7 +1,17 @@
 import { Express, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+
 import { getOllamaResponse } from './ollama';
 import { LLMConfig } from './llmConfig';
+
+/**
+ * Object containing valid models for each provider.
+ * Extend these arrays to allow additional models per provider.
+ */
+export const validModels: Record<string, string[]> = {
+  ollama: ['llama3.2'],
+  huggingFace: ['deepseek-ai/DeepSeek-R1-0528'],
+};
 
 /**
  * In-memory mock store for chat histories.
@@ -121,15 +131,28 @@ export function registerRoutes(app: Express): void {
         }
       }
 
-      // Validate and sanitize model input: only allow 'llama3.2'
-      const allowedModels = ['llama3.2'];
+      // Validate model input using validModels object
       if (
         safeConfig &&
         typeof safeConfig === 'object' &&
         'model' in safeConfig
       ) {
-        if (safeConfig.model !== 'llama3.2') {
-          delete safeConfig.model;
+        // Check if the model exists in any provider's allowed models
+        const allAllowedModels = Object.values(validModels).flat();
+        if (!allAllowedModels.includes(safeConfig.model)) {
+          console.error(
+            `Invalid model '${
+              safeConfig.model
+            }'. Allowed models: ${allAllowedModels.join(', ')}`
+          );
+          res
+            .status(400)
+            .json({
+              error: `Invalid model. Allowed models: ${allAllowedModels.join(
+                ', '
+              )}`,
+            });
+          return;
         }
       }
 
