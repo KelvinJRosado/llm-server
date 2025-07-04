@@ -131,37 +131,57 @@ export function registerRoutes(app: Express): void {
         }
       }
 
-      // Validate model input using validModels object
+      // Validate model input and determine provider
+      let provider: string | undefined;
       if (
         safeConfig &&
         typeof safeConfig === 'object' &&
         'model' in safeConfig
       ) {
-        // Check if the model exists in any provider's allowed models
-        const allAllowedModels = Object.values(validModels).flat();
-        if (!allAllowedModels.includes(safeConfig.model)) {
+        // Find which provider the model belongs to
+        for (const [prov, models] of Object.entries(validModels)) {
+          if (models.includes(safeConfig.model)) {
+            provider = prov;
+            break;
+          }
+        }
+        if (!provider) {
+          const allAllowedModels = Object.values(validModels).flat();
           console.error(
             `Invalid model '${
               safeConfig.model
             }'. Allowed models: ${allAllowedModels.join(', ')}`
           );
-          res
-            .status(400)
-            .json({
-              error: `Invalid model. Allowed models: ${allAllowedModels.join(
-                ', '
-              )}`,
-            });
+          res.status(400).json({
+            error: `Invalid model. Allowed models: ${allAllowedModels.join(
+              ', '
+            )}`,
+          });
           return;
         }
       }
 
-      // Get response from LLM with configuration
-      const responseContent = await getOllamaResponse(
-        content,
-        chatStore[chatId],
-        safeConfig as LLMConfig
-      );
+      // Call the appropriate function based on provider
+      let responseContent: string | undefined;
+      if (provider === 'ollama') {
+        responseContent = await getOllamaResponse(
+          content,
+          chatStore[chatId],
+          safeConfig as LLMConfig
+        );
+      } else if (provider === 'huggingFace') {
+        // Dynamically import to avoid circular dependency if not used
+        const { getHuggingFaceResponse } = await import('./huggingFace');
+        responseContent = await getHuggingFaceResponse(
+          content,
+          chatStore[chatId],
+          safeConfig as LLMConfig
+        );
+      } else {
+        // Fallback: should not happen due to earlier validation
+        res.status(500).json({ error: 'No valid provider found for model.' });
+        return;
+      }
 
       const responseEntry = {
         timestamp: new Date().toLocaleTimeString('en-US', {
