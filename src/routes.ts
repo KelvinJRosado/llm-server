@@ -1,6 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getOllamaResponse, type LLMConfig } from './ollama';
+import { getOllamaResponse } from './ollama';
+import { LLMConfig } from './llmConfig';
 
 /**
  * In-memory mock store for chat histories.
