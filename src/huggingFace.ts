@@ -3,21 +3,36 @@ import { InferenceClient } from '@huggingface/inference';
 const client = new InferenceClient(process.env.HF_TOKEN);
 
 /**
+ * Configuration interface for Hugging Face LLM requests (mirrors Ollama LLMConfig)
+ */
+export interface LLMConfig {
+  model?: string;
+  temperature?: number;
+}
+
+/**
  * Sends a chat completion request to Hugging Face and returns only the concise answer,
  * omitting any <think> sections from the response. The default model is "deepseek-ai/DeepSeek-R1-0528".
  *
- * @param messages - The array of chat messages to send.
- * @param model - (Optional) The model to use. Defaults to "deepseek-ai/DeepSeek-R1-0528".
- * @returns The concise assistant response as a string.
+ * @param chatMessage - The user's message
+ * @param chatHistory - Previous chat history
+ * @param config - Configuration options for the LLM
+ * @returns Promise<string> - The LLM response
  */
 export const getHuggingFaceResponse = async (
-  messages: Array<{ role: string; content: string }>,
-  model = 'deepseek-ai/DeepSeek-R1-0528'
+  chatMessage: string,
+  chatHistory: { role: string; content: string }[],
+  config: LLMConfig = {}
 ): Promise<string> => {
   try {
+    const { model = 'deepseek-ai/DeepSeek-R1-0528', temperature } = config;
+
     const chatCompletion = await client.chatCompletion({
       model,
-      messages,
+      messages: [...chatHistory, { role: 'user', content: chatMessage }],
+      options: {
+        temperature,
+      },
     });
 
     const originalContent =
