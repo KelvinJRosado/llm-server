@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { registerRoutes } from './routes.js';
+import { testHuggingFace } from './huggingFace.js';
 
 /**
  * Express application instance
@@ -27,6 +28,8 @@ app.use(express.json());
  * Register API routes
  */
 registerRoutes(app);
+
+await testHuggingFace();
 
 /**
  * Start the Express server
