@@ -1,14 +1,8 @@
+
 import { InferenceClient } from '@huggingface/inference';
+import { LLMConfig } from './llmConfig.js';
 
 const client = new InferenceClient(process.env.HF_TOKEN);
-
-/**
- * Configuration interface for Hugging Face LLM requests (mirrors Ollama LLMConfig)
- */
-export interface LLMConfig {
-  model?: string;
-  temperature?: number;
-}
 
 /**
  * Sends a chat completion request to Hugging Face and returns only the concise answer,

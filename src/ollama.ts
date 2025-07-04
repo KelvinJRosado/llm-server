@@ -1,14 +1,7 @@
 import { Ollama } from 'ollama';
+import { LLMConfig } from './llmConfig.js';
 
 const ollama = new Ollama({ host: 'http://127.0.0.1:11434' });
-
-/**
- * Configuration interface for LLM requests
- */
-export interface LLMConfig {
-  model?: string;
-  temperature?: number;
-}
 
 /**
  * Get response from Ollama with configuration options
