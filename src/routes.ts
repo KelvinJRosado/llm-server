@@ -5,6 +5,15 @@ import { getOllamaResponse } from './ollama';
 import { LLMConfig } from './llmConfig';
 
 /**
+ * Interface for gaming service integrations
+ */
+export interface GameIntegration {
+  service: 'steam' | 'epic' | 'playstation' | 'xbox';
+  username: string;
+  connectedAt: string;
+}
+
+/**
  * Object containing valid models for each provider.
  * Extend these arrays to allow additional models per provider.
  */
@@ -21,6 +30,12 @@ const chatStore: Record<
   string,
   { timestamp: string; content: string; role: string }[]
 > = {};
+
+/**
+ * In-memory store for user integrations.
+ * Key: userId (string), Value: array of gaming service integrations
+ */
+const integrationStore: Record<string, GameIntegration[]> = {};
 
 /**
  * Registers all API routes on the provided Express application instance.
@@ -228,5 +243,88 @@ export function registerRoutes(app: Express): void {
     const safeHistory = history.map(stripId);
     console.log(`Retrieved history for chat ID: ${chatId}`, safeHistory);
     res.json({ chatId, history: safeHistory });
+  });
+
+  /**
+   * Add or update a gaming service integration
+   * @route POST /integration
+   * @body { userId: string, service: string, username: string }
+   * @returns {object} Success message with integration data
+   */
+  app.post('/integration', (req: Request, res: Response): void => {
+    const { userId, service, username } = req.body;
+
+    console.log(`Received integration request:`, { userId, service, username });
+
+    // Validate required fields
+    if (!userId || !service || !username) {
+      console.error('Missing required fields for integration');
+      res.status(400).json({
+        error:
+          'Missing required fields: userId, service, and username are required',
+      });
+      return;
+    }
+
+    // Validate service type
+    const validServices = ['steam', 'epic', 'playstation', 'xbox'];
+    if (!validServices.includes(service)) {
+      console.error(`Invalid service type: ${service}`);
+      res.status(400).json({
+        error: `Invalid service. Must be one of: ${validServices.join(', ')}`,
+      });
+      return;
+    }
+
+    // Initialize user integrations if not exists
+    if (!integrationStore[userId]) {
+      integrationStore[userId] = [];
+    }
+
+    // Check if integration already exists for this service
+    const existingIntegrationIndex = integrationStore[userId].findIndex(
+      (integration) => integration.service === service
+    );
+
+    const newIntegration: GameIntegration = {
+      service: service as GameIntegration['service'],
+      username: username.trim(),
+      connectedAt: new Date().toISOString(),
+    };
+
+    if (existingIntegrationIndex >= 0) {
+      // Update existing integration
+      integrationStore[userId][existingIntegrationIndex] = newIntegration;
+      console.log(`Updated integration for user ${userId}, service ${service}`);
+    } else {
+      // Add new integration
+      integrationStore[userId].push(newIntegration);
+      console.log(
+        `Added new integration for user ${userId}, service ${service}`
+      );
+    }
+
+    res.status(201).json({
+      message: 'Integration saved successfully',
+      integration: newIntegration,
+    });
+  });
+
+  /**
+   * Get all integrations for a user
+   * @route GET /integration/:userId
+   * @param userId User ID
+   * @returns {object} User integrations
+   */
+  app.get('/integration/:userId', (req: Request, res: Response): void => {
+    const { userId } = req.params;
+    const integrations = integrationStore[userId] || [];
+
+    console.log(`Retrieved integrations for user ${userId}:`, integrations);
+
+    res.json({
+      userId,
+      integrations,
+    });
   });
 }
