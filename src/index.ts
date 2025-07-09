@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { registerRoutes } from './routes.js';
+import { getSteamUserGames, getSteamUserInfo } from './steam.js';
 
 /**
  * Express application instance
