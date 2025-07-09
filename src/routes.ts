@@ -304,4 +304,44 @@ export function registerRoutes(app: Express): void {
       integrations: integrationStore,
     });
   });
+
+  /**
+   * Delete a gaming service integration
+   * @route DELETE /integration/:service
+   * @param service Service name to remove
+   * @returns {object} Success message
+   */
+  app.delete('/integration/:service', (req: Request, res: Response): void => {
+    const { service } = req.params;
+
+    console.log(`Received integration deletion request for service: ${service}`);
+
+    // Validate service type
+    const validServices = ['steam', 'epic', 'playstation', 'xbox'];
+    if (!validServices.includes(service)) {
+      console.error(`Invalid service type: ${service}`);
+      res.status(400).json({
+        error: `Invalid service. Must be one of: ${validServices.join(', ')}`,
+      });
+      return;
+    }
+
+    // Check if integration exists
+    if (!integrationStore[service]) {
+      console.error(`Integration not found for service: ${service}`);
+      res.status(404).json({
+        error: `No integration found for service: ${service}`,
+      });
+      return;
+    }
+
+    // Remove the integration
+    delete integrationStore[service];
+    console.log(`Removed integration for service: ${service}`);
+
+    res.json({
+      message: 'Integration removed successfully',
+      service,
+    });
+  });
 }
