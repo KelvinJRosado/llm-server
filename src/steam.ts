@@ -5,12 +5,6 @@ const steam = new SteamAPI(process.env.STEAM_API_KEY || false);
 const steamId = await getSteamUserId();
 
 export async function getSteamUserId() {
-  // TODO: Implement logic to get Steam user ID
-
-  steam.resolve('https://steamcommunity.com/id/Zrelok').then((id) => {
-    console.log('Steam ID:', id); // 76561198146931523
-  });
-
   return '76561198071912903';
 }
 
