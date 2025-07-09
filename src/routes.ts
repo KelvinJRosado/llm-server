@@ -32,10 +32,11 @@ const chatStore: Record<
 > = {};
 
 /**
- * In-memory store for user integrations.
- * Key: userId (string), Value: array of gaming service integrations
+ * In-memory store for gaming service integrations.
+ * Each key corresponds to a gaming service, and the value is the user ID or username for that service.
+ * Example: { steam: 'foobar', epic: 'player123' }
  */
-const integrationStore: Record<string, GameIntegration[]> = {};
+const integrationStore: Record<string, string> = {};
 
 /**
  * Registers all API routes on the provided Express application instance.
@@ -248,20 +249,19 @@ export function registerRoutes(app: Express): void {
   /**
    * Add or update a gaming service integration
    * @route POST /integration
-   * @body { userId: string, service: string, username: string }
+   * @body { service: string, username: string }
    * @returns {object} Success message with integration data
    */
   app.post('/integration', (req: Request, res: Response): void => {
-    const { userId, service, username } = req.body;
+    const { username, service } = req.body;
 
-    console.log(`Received integration request:`, { userId, service, username });
+    console.log(`Received integration request:`, { service, username });
 
     // Validate required fields
-    if (!userId || !service || !username) {
+    if (!service || !username) {
       console.error('Missing required fields for integration');
       res.status(400).json({
-        error:
-          'Missing required fields: userId, service, and username are required',
+        error: 'Missing required fields: service and username are required',
       });
       return;
     }
@@ -276,55 +276,32 @@ export function registerRoutes(app: Express): void {
       return;
     }
 
-    // Initialize user integrations if not exists
-    if (!integrationStore[userId]) {
-      integrationStore[userId] = [];
-    }
+    // Store the username for this service
+    const previousUsername = integrationStore[service];
+    integrationStore[service] = username.trim();
 
-    // Check if integration already exists for this service
-    const existingIntegrationIndex = integrationStore[userId].findIndex(
-      (integration) => integration.service === service
+    const action = previousUsername ? 'Updated' : 'Added';
+    console.log(
+      `${action} integration for service ${service}: ${username.trim()}`
     );
-
-    const newIntegration: GameIntegration = {
-      service: service as GameIntegration['service'],
-      username: username.trim(),
-      connectedAt: new Date().toISOString(),
-    };
-
-    if (existingIntegrationIndex >= 0) {
-      // Update existing integration
-      integrationStore[userId][existingIntegrationIndex] = newIntegration;
-      console.log(`Updated integration for user ${userId}, service ${service}`);
-    } else {
-      // Add new integration
-      integrationStore[userId].push(newIntegration);
-      console.log(
-        `Added new integration for user ${userId}, service ${service}`
-      );
-    }
 
     res.status(201).json({
       message: 'Integration saved successfully',
-      integration: newIntegration,
+      service,
+      username: username.trim(),
     });
   });
 
   /**
-   * Get all integrations for a user
-   * @route GET /integration/:userId
-   * @param userId User ID
-   * @returns {object} User integrations
+   * Get all gaming service integrations
+   * @route GET /integration
+   * @returns {object} All gaming service integrations
    */
-  app.get('/integration/:userId', (req: Request, res: Response): void => {
-    const { userId } = req.params;
-    const integrations = integrationStore[userId] || [];
-
-    console.log(`Retrieved integrations for user ${userId}:`, integrations);
+  app.get('/integration', (req: Request, res: Response): void => {
+    console.log(`Retrieved all integrations:`, integrationStore);
 
     res.json({
-      userId,
-      integrations,
+      integrations: integrationStore,
     });
   });
 }
