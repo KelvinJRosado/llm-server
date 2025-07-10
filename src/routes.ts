@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { getOllamaResponse } from './ollama';
 import { LLMConfig } from './llmConfig';
+import { getSteamUserGames } from './steam';
 
 /**
  * Interface for gaming service integrations
@@ -250,47 +251,69 @@ export function registerRoutes(app: Express): void {
    * Add or update a gaming service integration
    * @route POST /integration
    * @body { service: string, username: string }
-   * @returns {object} Success message with integration data
+   * @returns {object} Success message with integration data and games list for Steam
    */
-  app.post('/integration', (req: Request, res: Response): void => {
-    const { username, service } = req.body;
+  app.post(
+    '/integration',
+    async (req: Request, res: Response): Promise<void> => {
+      const { username, service } = req.body;
 
-    console.log(`Received integration request:`, { service, username });
+      console.log(`Received integration request:`, { service, username });
 
-    // Validate required fields
-    if (!service || !username) {
-      console.error('Missing required fields for integration');
-      res.status(400).json({
-        error: 'Missing required fields: service and username are required',
-      });
-      return;
+      // Validate required fields
+      if (!service || !username) {
+        console.error('Missing required fields for integration');
+        res.status(400).json({
+          error: 'Missing required fields: service and username are required',
+        });
+        return;
+      }
+
+      // Validate service type
+      const validServices = ['steam', 'epic', 'playstation', 'xbox'];
+      if (!validServices.includes(service)) {
+        console.error(`Invalid service type: ${service}`);
+        res.status(400).json({
+          error: `Invalid service. Must be one of: ${validServices.join(', ')}`,
+        });
+        return;
+      }
+
+      // Store the username for this service
+      const previousUsername = integrationStore[service];
+      integrationStore[service] = username.trim();
+
+      const action = previousUsername ? 'Updated' : 'Added';
+      console.log(
+        `${action} integration for service ${service}: ${username.trim()}`
+      );
+
+      try {
+        const responseData: any = {
+          message: 'Integration saved successfully',
+          service,
+          username: username.trim(),
+          games: [],
+        };
+
+        // Fetch games for Steam integration
+        if (service === 'steam') {
+          const games = await getSteamUserGames(username.trim());
+          responseData.games = games;
+        }
+
+        res.status(201).json(responseData);
+      } catch (error) {
+        console.error('Error fetching games for integration:', error);
+        res.status(500).json({
+          error: 'Integration saved but failed to fetch games',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          service,
+          username: username.trim(),
+        });
+      }
     }
-
-    // Validate service type
-    const validServices = ['steam', 'epic', 'playstation', 'xbox'];
-    if (!validServices.includes(service)) {
-      console.error(`Invalid service type: ${service}`);
-      res.status(400).json({
-        error: `Invalid service. Must be one of: ${validServices.join(', ')}`,
-      });
-      return;
-    }
-
-    // Store the username for this service
-    const previousUsername = integrationStore[service];
-    integrationStore[service] = username.trim();
-
-    const action = previousUsername ? 'Updated' : 'Added';
-    console.log(
-      `${action} integration for service ${service}: ${username.trim()}`
-    );
-
-    res.status(201).json({
-      message: 'Integration saved successfully',
-      service,
-      username: username.trim(),
-    });
-  });
+  );
 
   /**
    * Get all gaming service integrations
@@ -314,7 +337,9 @@ export function registerRoutes(app: Express): void {
   app.delete('/integration/:service', (req: Request, res: Response): void => {
     const { service } = req.params;
 
-    console.log(`Received integration deletion request for service: ${service}`);
+    console.log(
+      `Received integration deletion request for service: ${service}`
+    );
 
     // Validate service type
     const validServices = ['steam', 'epic', 'playstation', 'xbox'];

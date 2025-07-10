@@ -1,33 +1,29 @@
-import { get } from 'http';
-import SteamAPI from 'steamapi';
+import SteamAPI, { GameInfo } from 'steamapi';
 
 const steam = new SteamAPI(process.env.STEAM_API_KEY || false);
-const steamId = await getSteamUserId();
 
-export async function getSteamUserId() {
-  return '76561198071912903';
-}
-
-export async function getSteamUserInfo() {
+export async function getSteamUserGames(steamId: string): Promise<any> {
   try {
-    const userInfo = await steam.getUserSummary(steamId);
+    const games = await steam.getUserOwnedGames(steamId, {
+      includeFreeGames: true,
+      includeAppInfo: true,
+    });
 
-    console.log('Steam User Info:', userInfo);
+    // Filter out the response to just grab the game names and playtime
+    const filteredGames: { name: string; playMinutes?: number }[] = [];
 
-    return userInfo;
-  } catch (error) {
-    console.error('Error fetching Steam user info:', error);
-    throw error;
-  }
-}
+    for (const entry of games) {
+      const game = entry.game as GameInfo;
+      const filteredGame = { name: game.name, playMinutes: entry.minutes };
+      filteredGames.push(filteredGame);
+    }
 
-export async function getSteamUserGames() {
-  try {
-    const games = await steam.getUserOwnedGames(steamId);
+    // Sort the games by playtime in descending order
+    filteredGames.sort((a, b) => (b.playMinutes || 0) - (a.playMinutes || 0));
 
-    console.log('Steam User Games:', games);
+    console.log('Filtered Steam User Games:', filteredGames);
 
-    return games;
+    return filteredGames;
   } catch (error) {
     console.error('Error fetching Steam user games:', error);
     throw error;

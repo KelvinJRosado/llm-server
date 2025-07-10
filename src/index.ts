@@ -1,11 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import { registerRoutes } from './routes.js';
-import {
-  getSteamUserGames,
-  getSteamUserId,
-  getSteamUserInfo,
-} from './steam.js';
 import { _ } from 'ollama/dist/shared/ollama.d792a03f.js';
 
 /**
@@ -48,8 +43,6 @@ app.use(express.json());
  * Register API routes
  */
 registerRoutes(app);
-
-await getSteamUserId();
 
 /**
  * Start the Express server
