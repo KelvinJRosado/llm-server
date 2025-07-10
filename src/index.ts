@@ -18,11 +18,26 @@ const app = express();
  */
 const PORT = 5000;
 
-/**
- * Middleware to enable CORS for all origins and methods
- * Adjust the options below for production security as needed
- */
-app.use(cors());
+// Configure CORS options
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Explicitly list allowed methods
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type',
+    'Accept',
+    'Authorization',
+  ], // Explicitly list allowed headers
+  credentials: true, // Allow cookies to be sent with cross-origin requests
+  optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+// Use the cors middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests for all routes
+// app.options('*', cors(corsOptions));
 
 /**
  * Middleware to parse JSON requests
@@ -39,8 +54,8 @@ await getSteamUserId();
 /**
  * Start the Express server
  */
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`🚀 Server is running on http://127.0.0.1:${PORT}`);
 });
 
 /**
