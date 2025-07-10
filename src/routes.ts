@@ -1,9 +1,9 @@
 import { Express, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
-import { getOllamaResponse } from './ollama';
-import { LLMConfig } from './llmConfig';
-import { getSteamUserGames } from './steam';
+import { getOllamaResponse } from './ollama.js';
+import { LLMConfig } from './llmConfig.js';
+import { getSteamUserGames } from './steam.js';
 
 /**
  * Interface for gaming service integrations

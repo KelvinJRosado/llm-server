@@ -23,6 +23,8 @@ export async function getSteamUserGames(steamId: string): Promise<any> {
 
     console.log('Filtered Steam User Games:', filteredGames);
 
+    console.log(`Total games found: ${filteredGames.length}`);
+
     return filteredGames;
   } catch (error) {
     console.error('Error fetching Steam user games:', error);
